@@ -1,0 +1,10 @@
+ngrok.exe
+rebuilt.ngrok-v3-stable-windows-amd64
+Project/langchainbot-e8599-firebase-adminsdk-jg4v5-fba15bcda8.json
+Project/Config.py
+.vercel
+.env
+.vscode
+.chroma
+Project/__pycache__
+venv
