@@ -277,7 +277,10 @@ def get_openai_key(line_user_id):
     Returns:
     The OpenAI key if it exists, None otherwise.
     """
-    return os.environ['OPENAI_API_KEY']
+
+    return os.environ['OPENAI_API_KEY'] #comment this out for actual use
+
+    #uncomment everything below this for actual use
     # doc_ref = db.collection('api_keys').document(line_user_id)
     # doc = doc_ref.get()
     # if doc.exists:
