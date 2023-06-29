@@ -1,12 +1,13 @@
-
+from .Config import *
 import firebase_admin
 from firebase_admin import credentials,storage,firestore
 # Initialize Firebase
-cred = credentials.Certificate(FIREBASE_SECRET_JSON)
+Firebase_secret_json = 'Project/langchainbot-e8599-firebase-adminsdk-jg4v5-fba15bcda8.json'
+Firebase_url = 'langchainbot-e8599.appspot.com'
+cred = credentials.Certificate(Firebase_secret_json)
 firebase_admin.initialize_app(cred, {
-    'storageBucket': FIREBASE_URL,
+    'storageBucket': Firebase_url,
 })
-
 db = firestore.client()
 
 from flask import Flask,request,abort
@@ -59,12 +60,13 @@ def webhook():
             elif choosingfiles:
                 try:
                     HandleChooseFiles(payload) 
+                    choosingfiles = False
+                    
                 except Exception as e:
                     Reply = "Please enter a valid sequence of comma-separated files or type \"STOP\" or \"EXIT\"."
                     ReplyMessage(Reply_token,Reply,Channel_access_token)
                     app.logger.error(e)
                     abort(400)
-                choosingfiles = False
             else:
                 try:
                     HandleText(payload)
@@ -73,7 +75,7 @@ def webhook():
                     abort(400)
         elif payload['events'][0]['message']['type'] == 'file':
             api_key = get_openai_key(line_id)
-            if api_key is None:
+            if api_key == None:
                 Reply = "Please enter your OpenAI API Key before uploading files!"
                 ReplyMessage(Reply_token,Reply,Channel_access_token)
             else:
@@ -212,6 +214,8 @@ def HandleChooseFiles(payload):
     # Get the selected file names
     selected_files = [files[i-1] for i in file_numbers]
     cnt = 0
+    
+    # ReplyMessage(Reply_token,"starting to process files...",Channel_access_token)
     for file_name in selected_files:
         # Get the blob corresponding to the file name
         blob = bucket.blob(file_name)
@@ -224,7 +228,7 @@ def HandleChooseFiles(payload):
             temp_file_path = temp_file.name
 
         # Load and split the documents from the PDF file
-        ReplyMessage(Reply_token,f"{file_name} is being processed...",Channel_access_token)
+        # ReplyMessage(Reply_token,f"{file_name} is being processed...",Channel_access_token)
         loader = PyPDFLoader(temp_file_path)
         docs = loader.load_and_split()
 
@@ -234,8 +238,11 @@ def HandleChooseFiles(payload):
         else:
             store.add_documents(docs)
         cnt+=1
-    setup(store)
+    
+    global choosingfiles
+    choosingfiles = False
     ReplyMessage(Reply_token,"All files have been processed.\n\nEnter a query or type \"STOP\" or \"EXIT\" to exit the conversation.\n\nSend \"listfiles\" to list the files again.",Channel_access_token)
+    setup(store)
 
 
 def delete_file(file_number):
@@ -278,29 +285,33 @@ def get_openai_key(line_user_id):
     The OpenAI key if it exists, None otherwise.
     """
 
-    return os.environ['OPENAI_API_KEY'] #comment this out for actual use
+    # return os.environ['OPENAI_API_KEY'] #comment this out for actual use
 
-    #uncomment everything below this for actual use
-    # doc_ref = db.collection('api_keys').document(line_user_id)
-    # doc = doc_ref.get()
-    # if doc.exists:
-    #     api_key = doc.to_dict().get('openai_key')
-    #     openai.api_key = api_key
-    #     os.environ['OPENAI_API_KEY'] = api_key
-    #     return doc.to_dict().get('openai_key')
-    # else:
-    #     print("No such document!")
-    #     return None
-# def set_openai_key(line_user_id, openai_key):
-    # doc_ref = db.collection('api_keys').document(line_user_id)
-    # doc_ref.set({
-    #     'openai_key': openai_key,
-    # })
-# def delete_openai_key(line_user_id):
-    # doc_ref = db.collection('api_keys').document(line_user_id)
-    # doc_ref.update({
-    #     'openai_key': firestore.DELETE_FIELD,
-    # })
+    # uncomment everything below this for actual use
+    doc_ref = db.collection('api_keys').document(line_user_id)
+    doc = doc_ref.get()
+    if doc.exists:
+        api_key = doc.to_dict().get('openai_key')
+        if api_key is not None:
+            openai.api_key = api_key
+            os.environ['OPENAI_API_KEY'] = api_key
+            return doc.to_dict().get('openai_key')
+        else:
+            print("No such document!")
+            return None
+    else:
+        print("No such document!")
+        return None
+def set_openai_key(line_user_id, openai_key):
+    doc_ref = db.collection('api_keys').document(line_user_id)
+    doc_ref.set({
+        'openai_key': openai_key,
+    })
+def delete_openai_key(line_user_id):
+    doc_ref = db.collection('api_keys').document(line_user_id)
+    doc_ref.update({
+        'openai_key': firestore.DELETE_FIELD,
+    })
 
 def HandleText(payload):
     """
@@ -316,14 +327,15 @@ def HandleText(payload):
     line_id = payload['events'][0]['source']['userId']
     api_key = get_openai_key(line_id)
     global inchatmode
-    if(api_key is not None):
+
+    if api_key is not None:
         openai.api_key = api_key
         inchatmode = True
     else:
         inchatmode = False
     if not inchatmode:  
         if message.lower().startswith("key:"):
-            # set_openai_key(line_id,message.split(':')[1])
+            set_openai_key(line_id,message.split(':')[1])
             Reply = f"Great! Your OpenAI API Key,{message.split(':')[1]} has been recorded. \n\nChat mode is now ON. Send any message. If you want to stop, just send any message with the words \"STOP\" or \"EXIT\".\n\nIf you want a list of your files, send any message containing the phrase \"listfiles\".\n\nIf you want to delete a file, type \"delete:\" followed by the file number."
             inchatmode = True
         else:
@@ -338,7 +350,7 @@ def HandleText(payload):
             qa = None
             Reply = "Your OpenAI API Key has temporarily been discarded and the conversation has ended. To start the conversation again, simply type any message. To permamently remove you OpenAI API Key from the database, type \"REMOVE\".\n\nChat mode is temporarily OFF."
         elif 'REMOVE' in query:
-            # delete_openai_key(line_id)
+            delete_openai_key(line_id)
             Reply = "Your OpenAI API Key has permanently been discarded. To start a conversation again, you must re-enter you OpenAI API Key in the format \"key:[OPENAI_API_KEY]\".\n\nChat mode is now OFF."
         elif message.lower().startswith("listfiles"):
             Reply = choose_files_for_chromadb()
