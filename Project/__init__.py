@@ -2,8 +2,6 @@ from .Config import *
 import firebase_admin
 from firebase_admin import credentials,storage,firestore
 # Initialize Firebase
-Firebase_secret_json = 'Project/langchainbot-e8599-firebase-adminsdk-jg4v5-fba15bcda8.json'
-Firebase_url = 'langchainbot-e8599.appspot.com'
 cred = credentials.Certificate(Firebase_secret_json)
 firebase_admin.initialize_app(cred, {
     'storageBucket': Firebase_url,
