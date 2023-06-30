@@ -8,6 +8,8 @@ Documentation to help setup and run the Document Analysis Line Bot. The bot uses
 - OpenAI API key
 - A Line account
 - A Google account
+- Git
+- Microsoft Build Tools C++ 14.0 or later (only if hnswlib doesnt load)
 # Setup directory
 1. Create a virtual environment `python -m venv linebot`
 2. Activate it:
