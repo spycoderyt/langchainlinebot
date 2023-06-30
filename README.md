@@ -31,7 +31,7 @@ Firebase is needed to store PDF files + OpenAI API Keys
 2. Create a Firebase Storage and create a collection named `api_keys`
 3. Create a Firestore Database and note the URL shown on the storage page, which is in the format `gs://[YOUR_PROJECT_NAME].appspot.com`
 # Setup config file
-1. Copy the example config file into a new file `copy Config.example > Config.py`
+1. INSIDE OF THE PROJECTS FILE, copy the example config file into a new file `copy Config.example > Config.py`
 2. Fill in Channel_secret, Channel_access_token, and Basic_ID from the information in the Line Bot developer console https://developers.line.biz/console/ (Basic Settings + Messaging API)
 3. Firebase Project > Project Settings > Service Accounts > Generate a New Private Key
 4. Move the private key (.json file) into the Project folder of your directory 
