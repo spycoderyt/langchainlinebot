@@ -1,5 +1,5 @@
 
-# LangChain Document Analysis App (PDF File + Google Docs supported)
+# Talk To Your Documents (In Line!)
 
 Documentation to help setup and run the Document Analysis Line Bot. The bot uses LangChain ConversationalRetrievalChain with ChromaDB and PyPDF2 to load, store, and analyze pdf files. Line API, OpenAI, Flask, and ngrok is used to create a Line Bot that can analyze PDF files.
 
